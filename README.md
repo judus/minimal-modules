@@ -1,1 +1,1 @@
-# minimal-modules
+# minimal-demo-event
