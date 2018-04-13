@@ -3,20 +3,112 @@
 namespace Maduser\Minimal\Modules;
 
 use Maduser\Minimal\Collections\Contracts\CollectionInterface;
-use Maduser\Minimal\Demos\Events\EventModule;
-use Maduser\Minimal\Framework\Facades\Config;
 use Maduser\Minimal\Framework\Facades\IOC;
 use Maduser\Minimal\Modules\Contracts\ModulesInterface;
 
+/**
+ * Class Modules
+ *
+ * @package Maduser\Minimal\Modules
+ */
 class Modules implements ModulesInterface
 {
-    private $modules = [];
+    /**
+     * @var CollectionInterface
+     */
+    private $modules;
 
-    public function __construct(CollectionInterface $collection)
+    /**
+     * @var string
+     */
+    private $dir = '';
+
+    /**
+     * @var string
+     */
+    private $base = '';
+
+    /**
+     * @return CollectionInterface
+     */
+    public function getModules(): CollectionInterface
     {
-        $this->modules = $collection;
+        return $this->modules;
     }
 
+    /**
+     * @param CollectionInterface $modules
+     *
+     * @return Modules
+     */
+    public function setModules(CollectionInterface $modules): Modules
+    {
+        $this->modules = $modules;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDir(): string
+    {
+        return rtrim($this->dir, '/') . '/';
+    }
+
+    /**
+     * @param string $dir
+     *
+     * @return Modules
+     */
+    public function setDir(string $dir): Modules
+    {
+        $this->dir = $dir;
+
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBase(): string
+    {
+        return rtrim($this->base, '/') . '/';
+    }
+
+    /**
+     * @param string $base
+     *
+     * @return Modules
+     */
+    public function setBase(string $base): Modules
+    {
+        $this->base = $base;
+
+        return $this;
+    }
+
+    /**
+     * Modules constructor.
+     *
+     * @param CollectionInterface $collection
+     * @param string              $dir
+     * @param string              $base
+     */
+    public function __construct(
+        CollectionInterface $collection,
+        string $dir = '',
+        string $base = ''
+    ) {
+        $this->setModules($collection);
+        $this->setDir($dir);
+        $this->setBase($base);
+    }
+
+    /**
+     * @param $name
+     * @param $module
+     */
     public function add($name, $module)
     {
         if (! $this->modules->exists($name)) {
@@ -24,21 +116,32 @@ class Modules implements ModulesInterface
         }
     }
 
+    /**
+     * @param $name
+     *
+     * @return mixed|null
+     */
     public function get($name)
     {
         return $this->modules->exists($name);
     }
 
+    /**
+     * @return CollectionInterface
+     */
     public function all()
     {
         return $this->modules;
     }
 
+    /**
+     * @param string $module
+     *
+     * @return array
+     */
     public function register(string $module)
     {
-        $dir = Config::paths('system') . '/' .
-               Config::paths('modules') . '/' .
-               ltrim(rtrim($module, '*'), '/');
+        $dir = $this->getBase() . $this->getDir() . rtrim($module, '*');
 
         if (is_dir($dir)) {
             return $this->fromPath($module);
@@ -47,6 +150,12 @@ class Modules implements ModulesInterface
         }
     }
 
+    /**
+     * @param $path
+     * @param $name
+     *
+     * @return array
+     */
     protected function getDirs($path, $name)
     {
         $array = [];
@@ -60,12 +169,17 @@ class Modules implements ModulesInterface
         return $array;
     }
 
+    /**
+     * @param $name
+     *
+     * @return array
+     */
     protected function fromPath($name)
     {
         $modules = [];
 
-        $base = Config::paths('system') . '/';
-        $path = Config::paths('modules') . '/';
+        $base = $this->getBase();
+        $path = $this->getDir();
 
         if ($this->endsWith($name, '*')) {
 
@@ -82,6 +196,12 @@ class Modules implements ModulesInterface
         return $modules;
     }
 
+    /**
+     * @param $name
+     * @param $path
+     *
+     * @return mixed|null
+     */
     protected function makeFromPath($name, $path)
     {
         if (!$this->get($name)) {
@@ -100,6 +220,11 @@ class Modules implements ModulesInterface
         return null;
     }
 
+    /**
+     * @param $provider
+     *
+     * @return mixed
+     */
     protected function fromProvider($provider)
     {
         $provider = IOC::resolve($provider);
@@ -136,6 +261,5 @@ class Modules implements ModulesInterface
 
         return (substr($haystack, -$length) === $needle);
     }
-
 
 }
