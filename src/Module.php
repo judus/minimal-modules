@@ -1,5 +1,6 @@
 <?php namespace Maduser\Minimal\Modules;
 
+use Maduser\Minimal\Framework\ArrayLoader;
 use Maduser\Minimal\Framework\Facades\App;
 use Maduser\Minimal\Framework\Facades\Config;
 use Maduser\Minimal\Modules\Contracts\ModuleInterface;
@@ -209,14 +210,6 @@ class Module implements ModuleInterface
      */
     public function __construct(array $settings = [])
     {
-        count($settings) == 0 || $this->init($settings);
-    }
-
-    /**
-     * @param array $settings
-     */
-    protected function init(array $settings)
-    {
         foreach ($settings as $key => $value) {
             $method = 'set' . ucfirst($key);
             if (method_exists($this, $method)) {
@@ -224,26 +217,33 @@ class Module implements ModuleInterface
             }
         }
 
-        if ($this->getConfig()) {
-            $config = App::registerConfig($this->getConfig());
-        }
+        count($settings) <= 2 || $this->load();
+    }
 
-        if ($this->getBindings()) {
-            $bindings = App::registerBindings($this->getBindings());
-        }
+    /**
+     * @throws \Maduser\Minimal\Config\Exceptions\KeyDoesNotExistException
+     */
+    protected function load()
+    {
+        ArrayLoader::config(
+            Config::paths('system') . $this->getConfig()
+        );
 
-        if ($this->getProviders()) {
-            $providers = App::registerProviders($this->getProviders());
-        }
+        ArrayLoader::providers(
+            Config::paths('system') . $this->getProviders()
+        );
 
-        if ($this->getSubscribers()) {
-            $subscribers = App::registerSubscribers($this->getSubscribers());
-        }
+        ArrayLoader::bindings(
+            Config::paths('system') . $this->getBindings()
+        );
 
-        if ($this->getRoutes()) {
-            App::registerRoutes($this->getRoutes());
-        }
+        ArrayLoader::subscribers(
+            Config::paths('system') . $this->getSubscribers()
+        );
 
+        ArrayLoader::routes(
+            Config::paths('system') . $this->getRoutes()
+        );
     }
 
     /**
